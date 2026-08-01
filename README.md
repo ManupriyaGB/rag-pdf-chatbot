@@ -152,8 +152,5 @@ streamlit run app/main.py
 - Cloud Deployment
 - Multi-LLM Support
 
----
 
-## Author
 
-**Manupriya G B**
