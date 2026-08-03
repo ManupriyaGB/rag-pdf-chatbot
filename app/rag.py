@@ -12,6 +12,24 @@ from llm import LLM
 
 
 class RAGPipeline:
+    
+
+    pdf_files = [
+        file
+        for file in os.listdir("data")
+        if file.endswith(".pdf")
+    ]
+    
+    for pdf in pdf_files:
+        pdf_path = os.path.join("data", pdf)
+    
+        text = load_pdf(pdf_path)
+
+    # chunk
+
+    # embeddings
+
+    # add to FAISS
 
     def __init__(self):
 
