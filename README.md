@@ -2,13 +2,12 @@
 
 A Retrieval-Augmented Generation (RAG) based PDF Question Answering system built using Python, Hugging Face Transformers, FAISS, Ollama, and Streamlit.
 
-The application allows users to upload a PDF, create a vector database from its content, and ask questions based only on the uploaded document.
+The application Automatically reads all PDF files from the data/ folder, create a vector database from its content, and ask questions based only on the uploaded document.
 
 ---
 
 # Features
 
-- Upload any PDF document
 - Extract text from PDF
 - Split document into chunks
 - Generate embeddings using Hugging Face
@@ -58,25 +57,25 @@ rag-pdf-chatbot/
 ```
                     OFFLINE
 
-              PDF Document
-                    │
-                    ▼
-             Extract Text
-                    │
-                    ▼
-              Text Chunking
-                    │
-                    ▼
-          Generate Embeddings
-                    │
-                    ▼
-             FAISS Vector DB
-                    │
-                    ▼
-         vector_db/index.faiss
-                    │
-                    ▼
-         vector_db/chunks.pkl
+         PDFs from data/
+                │
+                ▼
+         Extract Text
+                │
+                ▼
+           Chunking
+                │
+                ▼
+     Generate Embeddings
+                │
+                ▼
+      Create FAISS Index
+                │
+                ▼
+     vector_db/index.faiss
+                │
+                ▼
+      vector_db/chunks.pkl
 
 
 =====================================================
@@ -159,7 +158,21 @@ ollama list
 ```
 
 ---
+# Before Running
 
+Copy one or more PDF files into the `data/` folder.
+
+Example
+
+```text
+data/
+│
+├── attention_is_all_you_need.pdf
+├── bert.pdf
+└── llama.pdf
+```
+
+If the vector database does not exist, it will be created automatically when the application starts.
 # Run the Application
 
 ```bash
@@ -178,15 +191,12 @@ python tests/test_rag.py
 
 # Example Workflow
 
-1. Upload a PDF document.
-2. Click **Build Knowledge Base**.
-3. The application extracts text from the PDF.
-4. The document is split into chunks.
-5. Embeddings are generated.
-6. Embeddings are stored in FAISS.
-7. Ask any question related to the uploaded PDF.
-8. The system retrieves the most relevant chunks.
-9. Ollama generates the final answer using the retrieved context.
+1. Place one or more PDF files inside the data/ folder.
+2. Start the application.
+3. The application automatically builds the vector database if it does not exist.
+4. Enter your question.
+5. Relevant document chunks are retrieved.
+6. Ollama generates the final answer.
 
 ---
 
@@ -218,13 +228,10 @@ screenshots/
 └── final_answer.png
 ```
 
-Add screenshots after running the application.
-
 ---
 
 # Future Improvements
 
-- Support multiple PDFs
 - ChromaDB integration
 - Pinecone integration
 - Qdrant integration
