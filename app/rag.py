@@ -3,12 +3,12 @@ import pickle
 import faiss
 import numpy as np
 
-from app.utils import load_pdf
-from app.chunker import TextChunker
-from app.embeddings import EmbeddingModel
-from app.retriever import Retriever
-from app.prompt import PromptBuilder
-from app.llm import LLM
+from utils import load_pdf
+from chunker import TextChunker
+from embeddings import EmbeddingModel
+from retriever import Retriever
+from prompt import PromptBuilder
+from llm import LLM
 
 
 class RAGPipeline:
