@@ -1,23 +1,85 @@
-from utils import load_pdf
-from chunker import TextChunker
-from embeddings import EmbeddingModel
+import os
+import streamlit as st
 
-pdf_path = "data/raw/attention-is-all-you-need.pdf"
+from rag import RAGPipeline
 
-# Load PDF
-text = load_pdf(pdf_path)
+st.set_page_config(
+    page_title="PDF RAG Chatbot",
+    layout="wide"
+)
 
-# Chunk text
-chunker = TextChunker()
-chunks = chunker.split_text(text)
+st.title("📄 PDF RAG Chatbot")
 
-print(f"Total Chunks : {len(chunks)}")
+st.write(
+    "Upload a PDF and ask questions from it."
+)
 
-# Generate Embeddings
-embedding_model = EmbeddingModel()
+# --------------------------------------------------------
 
-vectors = embedding_model.create_embeddings(chunks)
+if "rag" not in st.session_state:
 
-print(f"\nTotal Embeddings : {len(vectors)}")
+    st.session_state.rag = RAGPipeline()
 
-print(f"\nEmbedding Dimension : {len(vectors[0])}")
+# --------------------------------------------------------
+
+uploaded_pdf = st.file_uploader(
+    "Upload PDF",
+    type=["pdf"]
+)
+
+if uploaded_pdf is not None:
+
+    os.makedirs("data", exist_ok=True)
+
+    pdf_path = os.path.join(
+        "data",
+        uploaded_pdf.name
+    )
+
+    with open(pdf_path, "wb") as file:
+
+        file.write(
+            uploaded_pdf.getbuffer()
+        )
+
+    st.success("PDF Uploaded Successfully")
+
+    if st.button("Build Knowledge Base"):
+
+        with st.spinner("Building Vector Database..."):
+
+            st.session_state.rag.build_vector_database(
+                pdf_path
+            )
+
+            st.session_state.rag.load_database()
+
+        st.success("Knowledge Base Created")
+
+# --------------------------------------------------------
+
+st.header("Ask Question")
+
+query = st.text_input(
+    "Enter your question"
+)
+
+if st.button("Generate Answer"):
+
+    if query.strip() == "":
+
+        st.warning(
+            "Please enter a question."
+        )
+
+    else:
+
+        with st.spinner("Generating Answer..."):
+
+            answer = st.session_state.rag.ask(
+                query
+            )
+
+        st.subheader("Answer")
+
+        st.write(answer)

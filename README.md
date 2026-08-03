@@ -1,26 +1,26 @@
-# 📚 RAG PDF Chatbot
+# 📄 RAG PDF Chatbot
 
-A Retrieval-Augmented Generation (RAG) application that allows users to chat with PDF documents using Large Language Models (LLMs).
+A Retrieval-Augmented Generation (RAG) based PDF Question Answering system built using Python, Hugging Face Transformers, FAISS, Ollama, and Streamlit.
 
-The project demonstrates the complete RAG pipeline including document loading, text chunking, embedding generation, vector database indexing, semantic retrieval, prompt engineering, and answer generation.
-
----
-
-## Features
-
-- Load PDF documents
-- Extract text from PDFs
-- Split documents into chunks
-- Generate text embeddings
-- Store embeddings in a FAISS vector database
-- Retrieve relevant document chunks
-- Generate answers using an LLM
-- Streamlit-based user interface
-- Modular project architecture
+The application allows users to upload a PDF, create a vector database from its content, and ask questions based only on the uploaded document.
 
 ---
 
-## Project Structure
+# Features
+
+- Upload any PDF document
+- Extract text from PDF
+- Split document into chunks
+- Generate embeddings using Hugging Face
+- Store embeddings using FAISS
+- Retrieve relevant chunks
+- Generate context-aware answers using Ollama
+- Simple Streamlit interface
+- Modular project structure
+
+---
+
+# Project Structure
 
 ```
 rag-pdf-chatbot/
@@ -44,6 +44,7 @@ rag-pdf-chatbot/
 ├── screenshots/
 │
 ├── tests/
+│   └── test_rag.py
 │
 ├── README.md
 ├── requirements.txt
@@ -52,88 +53,114 @@ rag-pdf-chatbot/
 
 ---
 
-# RAG Architecture
-
-## Offline Pipeline
+# RAG Pipeline
 
 ```
-PDF
- │
- ▼
-Document Loader
- │
- ▼
-Text Chunking
- │
- ▼
-Embedding Generation
- │
- ▼
-FAISS Vector Database
+                    OFFLINE
+
+              PDF Document
+                    │
+                    ▼
+             Extract Text
+                    │
+                    ▼
+              Text Chunking
+                    │
+                    ▼
+          Generate Embeddings
+                    │
+                    ▼
+             FAISS Vector DB
+                    │
+                    ▼
+         vector_db/index.faiss
+                    │
+                    ▼
+         vector_db/chunks.pkl
+
+
+=====================================================
+
+
+                    ONLINE
+
+              User Question
+                    │
+                    ▼
+        Query Embedding Creation
+                    │
+                    ▼
+            Similarity Search
+                    │
+                    ▼
+          Top-K Relevant Chunks
+                    │
+                    ▼
+             Prompt Creation
+                    │
+                    ▼
+             Ollama LLM
+                    │
+                    ▼
+               Final Answer
 ```
 
 ---
 
-## Online Pipeline
-
-```
-User Question
-      │
-      ▼
-Question Embedding
-      │
-      ▼
-Similarity Search
-      │
-      ▼
-Relevant Chunks
-      │
-      ▼
-Prompt Builder
-      │
-      ▼
-LLM
-      │
-      ▼
-Final Answer
-```
-
----
-
-## Technologies Used
+# Technologies Used
 
 - Python
 - Streamlit
-- LangChain
-- Sentence Transformers
+- Hugging Face Transformers
 - FAISS
 - Ollama
 - PyTorch
-- Hugging Face Transformers
+- NumPy
+- PyPDF
 
 ---
 
-## Installation
+# Installation
 
-Clone the repository:
+Clone the repository
 
 ```bash
-git clone git@github.com:ManupriyaGB/rag-pdf-chatbot.git
+git clone https://github.com/ManupriyaGB/rag-pdf-chatbot.git
 ```
 
-Move into the project:
+Move into the project directory
 
 ```bash
 cd rag-pdf-chatbot
 ```
 
-Install dependencies:
+Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run the application:
+---
+
+# Install Ollama
+
+Download and install Ollama.
+
+Pull the model
+
+```bash
+ollama pull llama3.2
+```
+
+Verify installation
+
+```bash
+ollama list
+```
+
+---
+
+# Run the Application
 
 ```bash
 streamlit run app/main.py
@@ -141,16 +168,71 @@ streamlit run app/main.py
 
 ---
 
-## Future Improvements
+# Test the Pipeline
+
+```bash
+python tests/test_rag.py
+```
+
+---
+
+# Example Workflow
+
+1. Upload a PDF document.
+2. Click **Build Knowledge Base**.
+3. The application extracts text from the PDF.
+4. The document is split into chunks.
+5. Embeddings are generated.
+6. Embeddings are stored in FAISS.
+7. Ask any question related to the uploaded PDF.
+8. The system retrieves the most relevant chunks.
+9. Ollama generates the final answer using the retrieved context.
+
+---
+
+# Vector Database
+
+The `vector_db` directory stores:
+
+```
+vector_db/
+│
+├── index.faiss
+└── chunks.pkl
+```
+
+- **index.faiss** → Stores embedding vectors.
+- **chunks.pkl** → Stores the original text chunks.
+
+---
+
+# Screenshots
+
+```
+screenshots/
+│
+├── home.png
+├── upload_pdf.png
+├── building_vector_db.png
+├── asking_question.png
+└── final_answer.png
+```
+
+Add screenshots after running the application.
+
+---
+
+# Future Improvements
 
 - Support multiple PDFs
+- ChromaDB integration
+- Pinecone integration
+- Qdrant integration
 - Hybrid Search
-- Metadata Filtering
+- Conversation Memory
 - Chat History
-- Source Citation
-- OCR Support
-- Cloud Deployment
-- Multi-LLM Support
-
+- GPU acceleration
+- Docker support
+- Cloud deployment
 
 

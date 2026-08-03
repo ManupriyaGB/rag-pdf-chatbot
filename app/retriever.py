@@ -1,34 +1,110 @@
-from langchain_community.vectorstores import FAISS
+import faiss
+import pickle
+import numpy as np
 
 
 class Retriever:
 
-    def __init__(self, vector_db):
-
-        self.vector_db = vector_db
-
-    def retrieve(self, query, k=3):
+    def __init__(self, embedding_model):
 
         print("=" * 70)
-        print("RETRIEVER")
+        print("Initializing Retriever...")
         print("=" * 70)
 
-        print(f"\nUser Query :\n{query}")
+        self.embedding_model = embedding_model
 
-        print("\nSearching Similar Chunks...")
+        print("\nLoading FAISS Index...")
 
-        docs = self.vector_db.similarity_search(query, k=k)
+        self.index = faiss.read_index(
+            "vector_db/index.faiss"
+        )
 
-        print(f"\nTop {k} Chunks Retrieved")
+        print("FAISS Index Loaded Successfully")
 
+        print("\nLoading Chunks...")
+
+        with open("vector_db/chunks.pkl", "rb") as file:
+            self.chunks = pickle.load(file)
+
+        print(f"Total Chunks Loaded : {len(self.chunks)}")
+
+    # --------------------------------------------------------
+    # Retrieve Similar Chunks
+    # --------------------------------------------------------
+
+    def retrieve(self, query, top_k=3):
+
+        print("\n" + "=" * 70)
+        print("RETRIEVAL STARTED")
         print("=" * 70)
 
-        for i, doc in enumerate(docs):
+        print("\nUser Query :")
+        print(query)
 
-            print(f"\nChunk {i+1}")
+        # ---------------------------------------------
+        # Query Embedding
+        # ---------------------------------------------
 
-            print("-" * 50)
+        print("\nGenerating Query Embedding...")
 
-            print(doc.page_content)
+        query_embedding = self.embedding_model.create_query_embedding(query)
 
-        return docs
+        query_embedding = np.array(
+            [query_embedding],
+            dtype=np.float32
+        )
+
+        print("Embedding Shape :", query_embedding.shape)
+
+        # ---------------------------------------------
+        # Similarity Search
+        # ---------------------------------------------
+
+        print("\nSearching FAISS...")
+
+        distances, indices = self.index.search(
+            query_embedding,
+            top_k
+        )
+
+        print("\nSearch Completed")
+
+        print("\nDistances")
+
+        print(distances)
+
+        print("\nIndices")
+
+        print(indices)
+
+        # ---------------------------------------------
+        # Retrieve Chunks
+        # ---------------------------------------------
+
+        retrieved_chunks = []
+
+        print("\n" + "=" * 70)
+        print("TOP MATCHING CHUNKS")
+        print("=" * 70)
+
+        for rank, idx in enumerate(indices[0]):
+
+            chunk = self.chunks[idx]
+
+            retrieved_chunks.append(chunk)
+
+            print(f"\nRank : {rank + 1}")
+
+            print(f"Chunk Index : {idx}")
+
+            print(f"Distance : {distances[0][rank]:.4f}")
+
+            print("-" * 70)
+
+            print(chunk)
+
+            print("-" * 70)
+
+        print("\nRetrieval Completed")
+
+        return retrieved_chunks
