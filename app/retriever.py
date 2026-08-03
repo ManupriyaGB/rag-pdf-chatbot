@@ -1,25 +1,34 @@
+from langchain_community.vectorstores import FAISS
+
+
 class Retriever:
-    """
-    Responsible for retrieving relevant chunks
-    from the vector database.
-    """
 
-    def __init__(self):
-        self.vector_db = None
+    def __init__(self, vector_db):
 
-    def load_vector_database(self):
-        """
-        Load FAISS index from disk.
-        """
-        pass
+        self.vector_db = vector_db
 
-    def retrieve(self, query, top_k=3):
-        """
-        Retrieve top-k most similar chunks.
-        """
+    def retrieve(self, query, k=3):
 
-        print(f"Searching for: {query}")
+        print("=" * 70)
+        print("RETRIEVER")
+        print("=" * 70)
 
-        # FAISS similarity search will be added later
+        print(f"\nUser Query :\n{query}")
 
-        return []
+        print("\nSearching Similar Chunks...")
+
+        docs = self.vector_db.similarity_search(query, k=k)
+
+        print(f"\nTop {k} Chunks Retrieved")
+
+        print("=" * 70)
+
+        for i, doc in enumerate(docs):
+
+            print(f"\nChunk {i+1}")
+
+            print("-" * 50)
+
+            print(doc.page_content)
+
+        return docs

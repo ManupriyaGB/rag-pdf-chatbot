@@ -1,16 +1,23 @@
-from app.utils import load_pdf
-from app.chunker import TextChunker
+from utils import load_pdf
+from chunker import TextChunker
+from embeddings import EmbeddingModel
 
-pdf_path = "data/raw/attention_is_all_you_need.pdf"
+pdf_path = "data/raw/attention-is-all-you-need.pdf"
 
+# Load PDF
 text = load_pdf(pdf_path)
 
+# Chunk text
 chunker = TextChunker()
-
 chunks = chunker.split_text(text)
 
 print(f"Total Chunks : {len(chunks)}")
 
-print()
+# Generate Embeddings
+embedding_model = EmbeddingModel()
 
-print(chunks[0])
+vectors = embedding_model.create_embeddings(chunks)
+
+print(f"\nTotal Embeddings : {len(vectors)}")
+
+print(f"\nEmbedding Dimension : {len(vectors[0])}")
