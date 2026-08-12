@@ -175,11 +175,11 @@ class RAGPipeline:
         )
 
         print("\nRetriever Ready")
-        # ==========================================================
+    # ==========================================================
     # Ask Question
     # ==========================================================
 
-    def ask(self, query):
+    def ask(self, query, chat_history=None):
 
         print("\n" + "=" * 70)
         print("ONLINE RAG PIPELINE")
@@ -210,9 +210,10 @@ class RAGPipeline:
         print("=" * 70)
 
         prompt = self.prompt_builder.build_prompt(
-            retrieved_chunks,
-            query
-        )
+        retrieved_chunks,
+        query,
+        chat_history
+    )
 
         print("\nPrompt Created Successfully")
 

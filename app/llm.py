@@ -1,49 +1,45 @@
-import ollama
+import os
+
+from dotenv import load_dotenv
+from google import genai
+
+load_dotenv()
 
 
 class LLM:
 
-    def __init__(self, model_name="llama3.2"):
-
-        self.model_name = model_name
+    def __init__(self):
 
         print("=" * 70)
-        print("Initializing LLM...")
+        print("Initializing Gemini LLM")
         print("=" * 70)
+
+        api_key = os.getenv("GEMINI_API_KEY")
+
+        if not api_key:
+            raise ValueError(
+                "GEMINI_API_KEY not found in .env file"
+            )
+
+        self.client = genai.Client(
+            api_key=api_key
+        )
+
+        # Current stable lightweight Gemini model
+        self.model_name = "gemini-3.1-flash-lite"
 
         print(f"Model : {self.model_name}")
 
-    # ----------------------------------------------------
-    # Generate Response
-    # ----------------------------------------------------
-
     def generate(self, prompt):
 
-        print("\nSending Prompt to LLM...")
+        print("\nSending Prompt to Gemini...")
+        print("-" * 70)
 
-        response = ollama.chat(
-
+        response = self.client.models.generate_content(
             model=self.model_name,
-
-            messages=[
-
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-
-            ]
-
+            contents=prompt
         )
 
-        answer = response["message"]["content"]
+        print("Gemini Response Generated Successfully")
 
-        print("\nLLM Response Generated Successfully")
-
-        print("\n" + "=" * 70)
-        print("ANSWER")
-        print("=" * 70)
-
-        print(answer)
-
-        return answer
+        return response.text

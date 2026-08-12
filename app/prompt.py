@@ -6,45 +6,62 @@ class PromptBuilder:
         print("Prompt Builder Initialized")
         print("=" * 70)
 
-    def build_prompt(self, retrieved_chunks, query):
+    def build_prompt(
+        self,
+        retrieved_chunks,
+        query,
+        chat_history=None
+    ):
 
-        print("\nBuilding Prompt...")
+        context = "\n\n".join(
+            retrieved_chunks
+        )
 
-        context = "\n\n".join(retrieved_chunks)
+        history_text = ""
+
+        if chat_history:
+
+            history_text = "\nPrevious Conversation:\n"
+
+            for message in chat_history[-6:]:
+
+                role = message["role"]
+                content = message["content"]
+
+                history_text += (
+                    f"{role}: {content}\n"
+                )
 
         prompt = f"""
-You are an AI assistant.
+You are an expert document question-answering assistant.
 
-Use ONLY the information provided in the context below.
+Your job is to answer the user's question using the
+provided document context.
 
-If the answer cannot be found in the context,
-reply with:
+IMPORTANT RULES:
 
-"I don't know based on the provided document."
+1. Use the document context as the primary source.
+2. Give a clear and complete answer.
+3. Do not simply repeat the user's question.
+4. Combine information from multiple retrieved chunks when useful.
+5. If the answer is not available in the documents, say:
+   "I could not find the answer in the provided documents."
+6. For follow-up questions, use the previous conversation
+   to understand what the user is referring to.
 
-------------------------------------------------------------
-CONTEXT
-------------------------------------------------------------
+{history_text}
 
+Document Context:
+-----------------
 {context}
+-----------------
 
-------------------------------------------------------------
-QUESTION
-------------------------------------------------------------
-
+Current Question:
 {query}
 
-------------------------------------------------------------
-ANSWER
-------------------------------------------------------------
+Answer:
 """
 
         print("\nPrompt Created Successfully")
-
-        print("\n" + "=" * 70)
-        print("FINAL PROMPT")
-        print("=" * 70)
-
-        print(prompt)
 
         return prompt

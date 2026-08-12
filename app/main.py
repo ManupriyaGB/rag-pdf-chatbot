@@ -1,63 +1,146 @@
 import streamlit as st
+
 from rag import RAGPipeline
 
 
-# -------------------------------------------------------
-# Streamlit Page Config
-# -------------------------------------------------------
+# ==========================================================
+# PAGE CONFIG
+# ==========================================================
 
 st.set_page_config(
     page_title="RAG PDF Chatbot",
-    page_icon="📄",
+    page_icon="📚",
     layout="wide"
 )
 
-st.title("📄 RAG PDF Chatbot")
+# ==========================================================
+# TITLE
+# ==========================================================
 
-st.markdown("""
-Ask questions from the PDFs available inside the **data/** folder.
-""")
+st.title("📚 RAG PDF Chatbot")
 
-# -------------------------------------------------------
-# Load Pipeline
-# -------------------------------------------------------
+st.write(
+    "Ask questions about the PDFs stored in the data folder."
+)
+
+# ==========================================================
+# INITIALIZE RAG
+# ==========================================================
 
 if "rag_pipeline" not in st.session_state:
 
-    with st.spinner("Initializing RAG Pipeline..."):
+    with st.spinner(
+        "Initializing RAG Pipeline..."
+    ):
 
-        rag = RAGPipeline()
+        st.session_state.rag_pipeline = RAGPipeline()
 
-        rag.load_vector_database()
+        st.session_state.rag_pipeline.load_vector_database()
 
-        st.session_state.rag_pipeline = rag
+# ==========================================================
+# CHAT HISTORY
+# ==========================================================
 
-    st.success("Knowledge Base Ready ✅")
+if "messages" not in st.session_state:
 
-# -------------------------------------------------------
-# User Question
-# -------------------------------------------------------
+    st.session_state.messages = []
 
-query = st.text_input(
-    "Ask your question"
+# ==========================================================
+# DISPLAY PREVIOUS MESSAGES
+# ==========================================================
+
+for message in st.session_state.messages:
+
+    with st.chat_message(
+        message["role"]
+    ):
+
+        st.markdown(
+            message["content"]
+        )
+
+# ==========================================================
+# CHAT INPUT
+# ==========================================================
+
+query = st.chat_input(
+    "Ask a question about your documents..."
 )
 
-# -------------------------------------------------------
-# Generate Answer
-# -------------------------------------------------------
+# ==========================================================
+# PROCESS QUESTION
+# ==========================================================
 
-if st.button("Generate Answer"):
+if query:
 
-    if query.strip() == "":
+    # ------------------------------------------------------
+    # Display User Question
+    # ------------------------------------------------------
 
-        st.warning("Please enter a question.")
+    with st.chat_message("user"):
 
-    else:
+        st.markdown(query)
 
-        with st.spinner("Searching Documents..."):
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": query
+        }
+    )
 
-            answer = st.session_state.rag_pipeline.ask(query)
 
-        st.subheader("Answer")
+    # ------------------------------------------------------
+    # Generate Answer
+    # ------------------------------------------------------
 
-        st.write(answer)
+    with st.chat_message("assistant"):
+
+        with st.spinner(
+            "Searching documents and generating answer..."
+        ):
+
+            answer = (
+                st.session_state
+                .rag_pipeline
+                .ask(
+                    query,
+                    chat_history=st.session_state.messages
+                )
+            )
+
+        st.markdown(answer)
+
+
+    # ------------------------------------------------------
+    # Save Answer
+    # ------------------------------------------------------
+
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": answer
+        }
+    )
+
+
+# ==========================================================
+# SIDEBAR
+# ==========================================================
+
+with st.sidebar:
+
+    st.header("Chat Controls")
+
+    if st.button("🗑️ Clear Chat"):
+
+        st.session_state.messages = []
+
+        st.rerun()
+
+    st.divider()
+
+    st.write(
+        "📄 PDFs are loaded from:"
+    )
+
+    st.code("data/")

@@ -5,7 +5,7 @@ class TextChunker:
 
     def __init__(
         self,
-        chunk_size=100,
+        chunk_size=500,
         chunk_overlap=50
     ):
 
