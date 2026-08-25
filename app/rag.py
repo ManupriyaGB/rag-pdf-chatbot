@@ -1,5 +1,7 @@
 import os
 import pickle
+import hashlib
+
 import faiss
 import numpy as np
 
@@ -9,6 +11,7 @@ from embeddings import EmbeddingModel
 from retriever import Retriever
 from prompt import PromptBuilder
 from llm import LLM
+from table_loader import TableLoader
 
 
 class RAGPipeline:
@@ -25,12 +28,10 @@ class RAGPipeline:
         os.makedirs(self.vector_db, exist_ok=True)
 
         self.chunker = TextChunker()
-
         self.embedding_model = EmbeddingModel()
-
         self.prompt_builder = PromptBuilder()
-
         self.llm = LLM()
+        self.table_loader = TableLoader()
 
         self.retriever = None
 
@@ -44,185 +45,397 @@ class RAGPipeline:
             "chunks.pkl"
         )
 
-    # ==========================================================
-    # Read all PDFs
-    # ==========================================================
+        self.source_hash_file = os.path.join(
+            self.vector_db,
+            "source_hash.txt"
+        )
 
-    def load_all_pdfs(self):
+    # =========================================================
+    # FIND ALL FILES
+    # =========================================================
 
-        print("\nSearching PDFs...")
+    def find_source_files(self):
 
-        pdf_files = [
-            file
-            for file in os.listdir(self.data_folder)
-            if file.lower().endswith(".pdf")
-        ]
+        source_files = []
 
-        if len(pdf_files) == 0:
+        if not os.path.exists(self.data_folder):
 
-            raise FileNotFoundError(
-                "No PDF files found inside data folder."
-            )
+            print(f"Data folder not found: {self.data_folder}")
 
-        print(f"Found {len(pdf_files)} PDF(s)\n")
+            return source_files
 
-        all_chunks = []
+        for root, dirs, files in os.walk(self.data_folder):
 
-        for pdf in pdf_files:
+            for file in files:
 
-            pdf_path = os.path.join(
-                self.data_folder,
-                pdf
-            )
+                extension = os.path.splitext(file)[1].lower()
 
-            print("-" * 60)
-            print(f"Reading : {pdf}")
+                if extension in [
+                    ".pdf",
+                    ".csv",
+                    ".xlsx",
+                    ".xls"
+                ]:
 
-            text = load_pdf(pdf_path)
+                    full_path = os.path.join(root, file)
 
-            chunks = self.chunker.split_text(text)
+                    source_files.append(full_path)
 
-            print(f"Chunks Created : {len(chunks)}")
+        return sorted(source_files)
 
-            all_chunks.extend(chunks)
+    # =========================================================
+    # CREATE HASH OF SOURCE FILES
+    # =========================================================
 
-        print("\nTotal Chunks :", len(all_chunks))
+    def calculate_source_hash(self):
 
-        return all_chunks
+        files = self.find_source_files()
 
-    # ==========================================================
-    # Build Vector Database
-    # ==========================================================
+        hasher = hashlib.md5()
+
+        for file_path in files:
+
+            hasher.update(file_path.encode())
+
+            try:
+
+                with open(file_path, "rb") as f:
+
+                    while True:
+
+                        data = f.read(1024 * 1024)
+
+                        if not data:
+                            break
+
+                        hasher.update(data)
+
+            except Exception as e:
+
+                print(f"Could not read {file_path}: {e}")
+
+        return hasher.hexdigest()
+
+    # =========================================================
+    # CHECK WHETHER DATABASE IS UP TO DATE
+    # =========================================================
+
+    def database_is_current(self):
+
+        if not os.path.exists(self.index_file):
+            return False
+
+        if not os.path.exists(self.chunk_file):
+            return False
+
+        if not os.path.exists(self.source_hash_file):
+            return False
+
+        current_hash = self.calculate_source_hash()
+
+        with open(self.source_hash_file, "r") as f:
+
+            saved_hash = f.read().strip()
+
+        return current_hash == saved_hash
+
+    # =========================================================
+    # LOAD ALL DOCUMENTS
+    # =========================================================
+
+    def load_all_documents(self):
+
+        documents = []
+
+        source_files = self.find_source_files()
+
+        print("=" * 70)
+        print("SCANNING DATA FILES")
+        print("=" * 70)
+
+        print(f"Files Found : {len(source_files)}")
+
+        if not source_files:
+
+            print("No PDF / CSV / Excel files found!")
+
+            return documents
+
+        for file_path in source_files:
+
+            extension = os.path.splitext(
+                file_path
+            )[1].lower()
+
+            file_name = os.path.basename(file_path)
+
+            print("\n" + "-" * 60)
+            print(f"File : {file_path}")
+            print(f"Type : {extension}")
+
+            # =================================================
+            # PDF
+            # =================================================
+
+            if extension == ".pdf":
+
+                print("Loading PDF...")
+
+                try:
+
+                    text = load_pdf(file_path)
+
+                    chunks = self.chunker.split_text(text)
+
+                    print(
+                        f"PDF Chunks Created : {len(chunks)}"
+                    )
+
+                    documents.extend(chunks)
+
+                except Exception as e:
+
+                    print(
+                        f"ERROR loading PDF {file_name}: {e}"
+                    )
+
+            # =================================================
+            # CSV / EXCEL
+            # =================================================
+
+            elif extension in [
+                ".csv",
+                ".xlsx",
+                ".xls"
+            ]:
+
+                print("Loading table...")
+
+                try:
+
+                    rows = self.table_loader.load(
+                        file_path
+                    )
+
+                    print(
+                        f"Table Rows Created : {len(rows)}"
+                    )
+
+                    documents.extend(rows)
+
+                except Exception as e:
+
+                    print(
+                        f"ERROR loading table "
+                        f"{file_name}: {e}"
+                    )
+
+        print("\n" + "=" * 70)
+        print(
+            f"TOTAL SEARCHABLE DOCUMENTS : {len(documents)}"
+        )
+        print("=" * 70)
+
+        return documents
+
+    # =========================================================
+    # BUILD FAISS DATABASE
+    # =========================================================
 
     def build_vector_database(self):
 
-        print("\n" + "=" * 70)
+        print("\n")
+        print("=" * 70)
         print("BUILDING VECTOR DATABASE")
         print("=" * 70)
 
-        chunks = self.load_all_pdfs()
+        documents = self.load_all_documents()
 
-        print("\nGenerating Embeddings...\n")
+        if not documents:
 
-        embeddings = self.embedding_model.create_embeddings(chunks)
+            raise ValueError(
+                "No documents found. "
+                "Put PDF/CSV/XLSX files inside data/."
+            )
 
-        embeddings = np.array(
+        print("\nGenerating embeddings...")
+
+        embeddings = (
+            self.embedding_model.create_embeddings(
+                documents
+            )
+        )
+
+        embeddings = np.asarray(
             embeddings,
             dtype=np.float32
         )
 
-        print("\nEmbedding Shape :", embeddings.shape)
-
         dimension = embeddings.shape[1]
 
-        print("\nCreating FAISS Index...")
+        print(
+            f"Embedding Dimension : {dimension}"
+        )
+
+        print(
+            f"Total Vectors : {len(embeddings)}"
+        )
+
+        # =====================================================
+        # FAISS
+        # =====================================================
+
+        print("\nCreating FAISS index...")
 
         index = faiss.IndexFlatL2(dimension)
 
         index.add(embeddings)
-
-        print(f"\nTotal Vectors Stored : {index.ntotal}")
-
-        print("\nSaving FAISS Index...")
 
         faiss.write_index(
             index,
             self.index_file
         )
 
-        print("Index Saved Successfully")
-
-        print("\nSaving Chunks...")
+        # =====================================================
+        # SAVE DOCUMENTS
+        # =====================================================
 
         with open(
             self.chunk_file,
             "wb"
-        ) as file:
+        ) as f:
 
             pickle.dump(
-                chunks,
-                file
+                documents,
+                f
             )
 
-        print("Chunks Saved Successfully")
+        # =====================================================
+        # SAVE SOURCE HASH
+        # =====================================================
 
-        print("\nKnowledge Base Created Successfully")
+        source_hash = self.calculate_source_hash()
 
-    # ==========================================================
-    # Load Existing Vector Database
-    # ==========================================================
+        with open(
+            self.source_hash_file,
+            "w"
+        ) as f:
+
+            f.write(source_hash)
+
+        print("\nFAISS database created successfully.")
+
+        print(
+            f"Documents saved : {len(documents)}"
+        )
+
+    # =========================================================
+    # LOAD DATABASE
+    # =========================================================
 
     def load_vector_database(self):
 
-        print("\n" + "=" * 70)
-        print("LOADING VECTOR DATABASE")
+        print("\n")
+        print("=" * 70)
+        print("CHECKING VECTOR DATABASE")
         print("=" * 70)
 
-        if not os.path.exists(self.index_file):
+        if not self.database_is_current():
 
-            print("\nNo Existing Vector Database Found.")
+            print(
+                "Vector database is missing or outdated."
+            )
 
-            print("Creating New Database...\n")
+            print(
+                "Rebuilding FAISS database..."
+            )
 
             self.build_vector_database()
 
         else:
 
-            print("\nExisting Vector Database Found.")
+            print(
+                "Existing Vector Database is up to date."
+            )
+
+        # =====================================================
+        # RETRIEVER
+        # =====================================================
+
+        print("\nInitializing Retriever...")
 
         self.retriever = Retriever(
             self.embedding_model
         )
 
-        print("\nRetriever Ready")
-    # ==========================================================
-    # Ask Question
-    # ==========================================================
+        print("Retriever Ready")
 
-    def ask(self, query, chat_history=None):
+    # =========================================================
+    # ASK QUESTION
+    # =========================================================
 
-        print("\n" + "=" * 70)
-        print("ONLINE RAG PIPELINE")
-        print("=" * 70)
+    def ask(
+        self,
+        query,
+        chat_history=None
+    ):
 
         if self.retriever is None:
 
             self.load_vector_database()
 
-        print("\nUser Question:")
+        print("\n")
+        print("=" * 70)
+        print("USER QUESTION")
+        print("=" * 70)
+
         print(query)
 
-        print("\nRetrieving Relevant Chunks...\n")
+        # =====================================================
+        # RETRIEVE
+        # =====================================================
 
-        retrieved_chunks = self.retriever.retrieve(query)
+        print("\nRetrieving relevant information...")
 
-        print("\nRetrieved Chunks :")
+        retrieved_chunks = (
+            self.retriever.retrieve(query)
+        )
 
-        for i, chunk in enumerate(retrieved_chunks, start=1):
+        print("\nRetrieved Chunks:")
 
-            print("-" * 60)
-            print(f"Chunk {i}")
-            print(chunk[:300])
-            print()
+        for i, chunk in enumerate(
+            retrieved_chunks,
+            start=1
+        ):
 
-        print("=" * 70)
-        print("BUILDING PROMPT")
-        print("=" * 70)
+            print(
+                f"\nChunk {i}:"
+            )
+
+            print(chunk)
+
+        # =====================================================
+        # BUILD PROMPT
+        # =====================================================
 
         prompt = self.prompt_builder.build_prompt(
-        retrieved_chunks,
-        query,
-        chat_history
-    )
+            retrieved_chunks,
+            query,
+            chat_history
+        )
 
-        print("\nPrompt Created Successfully")
+        # =====================================================
+        # GEMINI
+        # =====================================================
 
-        print("\n" + "=" * 70)
-        print("GENERATING ANSWER")
-        print("=" * 70)
+        print("\nGenerating answer...")
 
-        answer = self.llm.generate(prompt)
+        answer = self.llm.generate(
+            prompt
+        )
 
-        print("\nAnswer Generated Successfully\n")
+        print("\nAnswer:")
+
+        print(answer)
 
         return answer

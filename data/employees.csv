@@ -1,0 +1,21 @@
+Employee_ID,Name,Age,Gender,Department,Designation,Experience_Years,Salary,Location,Joining_Year,Project,Performance_Rating
+EMP001,Prasad,28,Male,Artificial Intelligence,Computer Vision Engineer,4,65000,Bangalore,2022,PPE Defect Detection,4.5
+EMP002,Ananya,26,Female,Artificial Intelligence,ML Engineer,3,58000,Bangalore,2023,RAG Chatbot,4.2
+EMP003,Rahul,30,Male,Data Science,Data Scientist,6,72000,Hyderabad,2020,Fraud Detection,4.6
+EMP004,Priya,27,Female,Data Science,Data Analyst,4,52000,Chennai,2022,Customer Analytics,4.1
+EMP005,Arjun,32,Male,Backend Development,Senior Python Developer,8,85000,Pune,2018,Payment System,4.7
+EMP006,Sneha,25,Female,Artificial Intelligence,Junior ML Engineer,2,45000,Bangalore,2024,Image Classification,3.9
+EMP007,Vikram,29,Male,Computer Science,Software Engineer,5,68000,Mysore,2021,E-Commerce Platform,4.3
+EMP008,Kavya,31,Female,Data Science,Senior Data Scientist,7,90000,Hyderabad,2019,Recommendation System,4.8
+EMP009,Manoj,27,Male,Backend Development,Python Developer,4,60000,Bangalore,2022,REST API Platform,4.0
+EMP010,Divya,24,Female,Artificial Intelligence,AI Intern,1,30000,Bangalore,2025,Document Classification,3.8
+EMP011,Kiran,33,Male,Cloud Engineering,Cloud Engineer,9,95000,Chennai,2017,Cloud Migration,4.6
+EMP012,Megha,28,Female,Frontend Development,React Developer,5,62000,Pune,2021,Web Application,4.2
+EMP013,Sanjay,35,Male,Data Science,Lead Data Scientist,11,120000,Hyderabad,2015,Enterprise Analytics,4.9
+EMP014,Neha,29,Female,Cloud Engineering,DevOps Engineer,6,78000,Bangalore,2020,Kubernetes Deployment,4.5
+EMP015,Akash,26,Male,Artificial Intelligence,NLP Engineer,3,57000,Mysore,2023,Text Classification,4.1
+EMP016,Swathi,30,Female,Backend Development,Senior Backend Engineer,7,82000,Pune,2019,Microservices Platform,4.4
+EMP017,Rohit,28,Male,Computer Science,Software Developer,4,59000,Chennai,2022,Inventory Management,4.0
+EMP018,Pooja,27,Female,Data Science,Data Analyst,3,50000,Bangalore,2023,Sales Analytics,4.2
+EMP019,Harish,34,Male,Cloud Engineering,Cloud Architect,10,115000,Hyderabad,2016,Cloud Infrastructure,4.8
+EMP020,Keerthi,25,Female,Artificial Intelligence,Computer Vision Engineer,2,48000,Bangalore,2024,Defect Detection,4.0
