@@ -1,0 +1,103 @@
+Artificial intelligence is a field of computer science that focuses on creating systems that can perform tasks that normally require human intelligence.
+
+Machine learning is a branch of artificial intelligence. Machine learning algorithms learn patterns from data and use those patterns to make predictions or decisions.
+
+Deep learning is a type of machine learning that uses neural networks with multiple layers. Deep learning is commonly used for computer vision, natural language processing, speech recognition, and other tasks.
+
+Natural language processing is a field of artificial intelligence that focuses on understanding and generating human language.
+
+A neural network is a computational model made up of layers of interconnected nodes. Neural networks learn by adjusting their parameters during training.
+
+A transformer is a neural network architecture that uses attention mechanisms to process sequences of information.
+
+Self attention allows each token in a sequence to consider other tokens in the same sequence. This helps the model understand relationships between words.
+
+For example, in the sentence "The animal did not cross the road because it was tired", attention can help the model understand what the word "it" refers to.
+
+Attention works using three representations called query, key, and value. The query represents what a token is looking for. The key represents information that can be matched against the query. The value contains the information that is passed to the output.
+
+The attention mechanism calculates attention scores between tokens. Higher attention scores indicate that one token should pay more attention to another token.
+
+Multi head attention uses multiple attention heads. Each head can learn different relationships between tokens.
+
+A transformer block generally contains a multi head attention layer and a feed forward neural network. Residual connections and layer normalization are also used.
+
+Training a language model means adjusting the model parameters so that the model becomes better at predicting the next token.
+
+During language model training, the model receives a sequence of tokens and attempts to predict the next token in the sequence.
+
+For example, if the input is "Machine learning is", the model may learn that words such as "a", "a field", or "important" can follow the sequence depending on the training data.
+
+The loss function measures how different the model prediction is from the expected token. During training, the optimizer changes the model parameters to reduce the loss.
+
+The AdamW optimizer is commonly used to train transformer models.
+
+A tokenizer converts text into tokens. A token can represent a word, part of a word, punctuation mark, or another unit of text.
+
+A vocabulary is the collection of tokens that a tokenizer understands. Each token is assigned a numerical identifier.
+
+Embeddings convert token identifiers into numerical vectors. These vectors allow the neural network to process textual information mathematically.
+
+Computer vision is a field of artificial intelligence that enables computers to understand images and videos.
+
+Object detection identifies objects in an image and determines their locations.
+
+Image classification assigns a class or category to an image.
+
+Anomaly detection identifies patterns that are different from normal examples.
+
+Retrieval augmented generation combines information retrieval with language generation. A retrieval system first finds relevant information and a language model then uses that information to generate an answer.
+
+A vector database stores numerical vector representations of information and allows similar vectors to be retrieved.
+
+FAISS is a library used for efficient similarity search over vectors.
+
+A chatbot is a software application that communicates with users using natural language.
+
+A question answering system receives a question, finds relevant information, and generates an answer based on that information.
+
+A good language model should generate coherent text instead of simply repeating the input question.
+
+The goal of training is not to memorize one particular question. The model should learn general patterns from many examples.
+
+More training data generally provides the model with more language patterns to learn.
+
+A model with more parameters can represent more complex patterns, but larger models also require more memory and computational resources.
+
+A small language model can be useful for learning how transformer architectures work and for experimenting with training and inference.
+
+Python is a programming language commonly used for artificial intelligence and machine learning.
+
+PyTorch is a deep learning framework used to build and train neural networks.
+
+A tensor is a multidimensional numerical data structure commonly used by deep learning frameworks.
+
+The training process usually consists of loading data, creating batches, performing a forward pass, calculating loss, performing backpropagation, and updating model parameters.
+
+After training, the model weights can be saved to a file and loaded later for inference.
+
+Inference is the process of using a trained model to produce predictions or generate text.
+
+Text generation starts with an input sequence and repeatedly predicts the next token until the requested number of tokens has been generated.
+
+Temperature controls the randomness of text generation. A lower temperature generally produces more predictable output, while a higher temperature can produce more varied output.
+
+The purpose of a language model is to learn the probability of tokens occurring in a sequence.
+
+A language model can generate text one token at a time.
+
+The transformer architecture became important because attention allows the model to efficiently learn relationships between different positions in a sequence.
+
+The RAG system and the language model have different responsibilities. RAG retrieves external information, while the language model generates the final response using the retrieved context.
+
+PDF files, CSV files, and Excel files can be used as external knowledge sources for a RAG system.
+
+Changing information such as employee records is better stored in an external data source rather than permanently memorized by the language model.
+
+If an Excel file contains employee information, a RAG system can retrieve the relevant employee record when a user asks a question.
+
+For example, if a table contains an employee named Rahul and his department is Data Science, the retrieval system can find that row when the user asks about Rahul.
+
+A language model can then use the retrieved row as context to generate a natural language answer.
+
+The combination of retrieval and generation allows a chatbot to answer questions using private or changing information without retraining the language model every time the information changes.
