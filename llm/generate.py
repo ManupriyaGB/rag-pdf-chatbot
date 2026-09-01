@@ -11,7 +11,7 @@ sys.path.append(
     )
 )
 
-from small_llm.model import SmallGPT
+from llm.model import SmallGPT
 
 
 # ============================================================

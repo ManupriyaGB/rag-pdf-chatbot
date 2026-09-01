@@ -1,176 +1,305 @@
 import re
-import pickle
-from collections import Counter
-
 
 class SimpleTokenizer:
 
-    def __init__(self, vocab_size=10000):
+    def __init__(self, text=None):
 
-        self.vocab_size = vocab_size
-
-        self.stoi = {}
-        self.itos = {}
+        # ----------------------------------------------------
+        # Special tokens
+        # ----------------------------------------------------
 
         self.pad_token = "<PAD>"
         self.unk_token = "<UNK>"
         self.bos_token = "<BOS>"
         self.eos_token = "<EOS>"
 
-    # -------------------------------------------------
-    # TOKENIZE TEXT
-    # -------------------------------------------------
-
-    def tokenize(self, text):
-
-        text = text.lower()
-
-        tokens = re.findall(
-            r"\w+|[^\w\s]",
-            text
-        )
-
-        return tokens
-
-    # -------------------------------------------------
-    # BUILD VOCABULARY
-    # -------------------------------------------------
-
-    def build_vocab(self, text):
-
-        print("=" * 60)
-        print("Building Vocabulary")
-        print("=" * 60)
-
-        tokens = self.tokenize(text)
-
-        counter = Counter(tokens)
-
-        special_tokens = [
+        self.special_tokens = [
             self.pad_token,
             self.unk_token,
             self.bos_token,
             self.eos_token
         ]
 
-        # Reserve space for special tokens
-        max_words = self.vocab_size - len(special_tokens)
+        # ----------------------------------------------------
+        # Build vocabulary
+        # ----------------------------------------------------
 
-        most_common = counter.most_common(max_words)
+        if text is not None:
 
-        vocabulary = special_tokens + [
-            word for word, count in most_common
-        ]
+            tokens = self._tokenize(text)
 
-        self.stoi = {
-            token: index
-            for index, token in enumerate(vocabulary)
-        }
+            unique_tokens = sorted(
+                set(tokens)
+            )
 
-        self.itos = {
-            index: token
-            for token, index in self.stoi.items()
-        }
+            # Special tokens MUST be present
+            # in stoi before encode() is called.
 
-        print(f"Total Tokens      : {len(tokens)}")
-        print(f"Vocabulary Size   : {len(self.stoi)}")
+            vocabulary = (
+                self.special_tokens
+                + unique_tokens
+            )
 
-        print("\nSample Vocabulary:")
+            self.stoi = {
+                token: index
+                for index, token
+                in enumerate(vocabulary)
+            }
 
-        for token, index in list(self.stoi.items())[:20]:
-            print(f"{index:5d} -> {token}")
+            self.itos = {
+                index: token
+                for token, index
+                in self.stoi.items()
+            }
 
-        print("=" * 60)
+        else:
 
-    # -------------------------------------------------
+            self.stoi = {}
+
+            self.itos = {}
+
+    # ========================================================
+    # TOKENIZE
+    # ========================================================
+
+    def _tokenize(self, text):
+
+        # Keep words, numbers and punctuation separately.
+        #
+        # Example:
+        #
+        # "Self attention is useful."
+        #
+        # becomes approximately:
+        #
+        # ["Self", "attention", "is", "useful", "."]
+
+        return re.findall(
+            r"\w+|[^\w\s]",
+            text,
+            re.UNICODE
+        )
+
+    # ========================================================
     # ENCODE
-    # -------------------------------------------------
+    # ========================================================
 
-    def encode(self, text):
+    def encode(
+        self,
+        text,
+        add_bos=False,
+        add_eos=False
+    ):
 
-        tokens = self.tokenize(text)
-
-        ids = []
-
-        for token in tokens:
-
-            if token in self.stoi:
-                ids.append(self.stoi[token])
-
-            else:
-                ids.append(
-                    self.stoi[self.unk_token]
-                )
-
-        return ids
-
-    # -------------------------------------------------
-    # DECODE
-    # -------------------------------------------------
-
-    def decode(self, ids):
-
-        tokens = []
-
-        for idx in ids:
-
-            if idx in self.itos:
-
-                token = self.itos[idx]
-
-                if token not in [
-                    self.pad_token,
-                    self.bos_token,
-                    self.eos_token
-                ]:
-                    tokens.append(token)
-
-        text = " ".join(tokens)
-
-        # Clean spaces before punctuation
-        text = re.sub(
-            r"\s+([,.!?;:])",
-            r"\1",
+        tokens = self._tokenize(
             text
         )
 
-        return text
+        ids = []
 
-    # -------------------------------------------------
-    # SAVE
-    # -------------------------------------------------
+        # ----------------------------------------------------
+        # BOS
+        # ----------------------------------------------------
 
-    def save(self, path):
+        if add_bos:
 
-        with open(path, "wb") as f:
-
-            pickle.dump(
-                {
-                    "stoi": self.stoi,
-                    "itos": self.itos,
-                    "vocab_size": self.vocab_size
-                },
-                f
+            ids.append(
+                self.stoi[
+                    self.bos_token
+                ]
             )
 
-        print(f"Tokenizer saved to: {path}")
+        # ----------------------------------------------------
+        # Normal tokens
+        # ----------------------------------------------------
 
-    # -------------------------------------------------
-    # LOAD
-    # -------------------------------------------------
+        unk_id = self.stoi[
+            self.unk_token
+        ]
 
-    @classmethod
-    def load(cls, path):
+        for token in tokens:
 
-        with open(path, "rb") as f:
+            token_id = self.stoi.get(
+                token,
+                unk_id
+            )
 
-            data = pickle.load(f)
+            ids.append(
+                token_id
+            )
 
-        tokenizer = cls(
-            vocab_size=data["vocab_size"]
+        # ----------------------------------------------------
+        # EOS
+        # ----------------------------------------------------
+
+        if add_eos:
+
+            ids.append(
+                self.stoi[
+                    self.eos_token
+                ]
+            )
+
+        return ids
+
+    # ========================================================
+    # DECODE
+    # ========================================================
+
+    def decode(
+        self,
+        ids,
+        skip_special_tokens=False
+    ):
+
+        tokens = []
+
+        for token_id in ids:
+
+            token = self.itos.get(
+                int(token_id),
+                self.unk_token
+            )
+
+            if (
+                skip_special_tokens
+                and token in self.special_tokens
+            ):
+
+                continue
+
+            tokens.append(
+                token
+            )
+
+        # ----------------------------------------------------
+        # Basic detokenization
+        # ----------------------------------------------------
+
+        text = ""
+
+        for token in tokens:
+
+            if not text:
+
+                text = token
+
+            elif re.match(
+                r"[^\w\s]",
+                token,
+                re.UNICODE
+            ):
+
+                text += token
+
+            else:
+
+                text += " " + token
+
+        return text
+
+    # ========================================================
+    # VOCAB SIZE
+    # ========================================================
+
+    @property
+    def vocab_size(self):
+
+        return len(
+            self.stoi
         )
 
-        tokenizer.stoi = data["stoi"]
-        tokenizer.itos = data["itos"]
+    # ========================================================
+    # SAVE
+    # ========================================================
+
+    def save(
+        self,
+        path
+    ):
+
+        import json
+
+        data = {
+            "stoi": self.stoi,
+            "itos": {
+                str(k): v
+                for k, v
+                in self.itos.items()
+            },
+            "pad_token": self.pad_token,
+            "unk_token": self.unk_token,
+            "bos_token": self.bos_token,
+            "eos_token": self.eos_token
+        }
+
+        with open(
+            path,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            json.dump(
+                data,
+                f,
+                ensure_ascii=False,
+                indent=2
+            )
+
+    # ========================================================
+    # LOAD
+    # ========================================================
+
+    @classmethod
+    def load(
+        cls,
+        path
+    ):
+
+        import json
+
+        with open(
+            path,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            data = json.load(f)
+
+        tokenizer = cls()
+
+        tokenizer.stoi = data[
+            "stoi"
+        ]
+
+        tokenizer.itos = {
+            int(k): v
+            for k, v
+            in data["itos"].items()
+        }
+
+        tokenizer.pad_token = data[
+            "pad_token"
+        ]
+
+        tokenizer.unk_token = data[
+            "unk_token"
+        ]
+
+        tokenizer.bos_token = data[
+            "bos_token"
+        ]
+
+        tokenizer.eos_token = data[
+            "eos_token"
+        ]
+
+        tokenizer.special_tokens = [
+            tokenizer.pad_token,
+            tokenizer.unk_token,
+            tokenizer.bos_token,
+            tokenizer.eos_token
+        ]
 
         return tokenizer
+
