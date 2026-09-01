@@ -8,7 +8,7 @@ from rag import RAGPipeline
 # ==========================================================
 
 st.set_page_config(
-    page_title="RAG PDF Chatbot",
+    page_title="RAG Chatbot",
     page_icon="📚",
     layout="wide"
 )
@@ -17,7 +17,7 @@ st.set_page_config(
 # TITLE
 # ==========================================================
 
-st.title("📚 RAG PDF Chatbot")
+st.title("📚 RAG Chatbot")
 
 st.write(
     "Ask questions about the PDFs stored in the data folder."
@@ -131,7 +131,7 @@ with st.sidebar:
 
     st.header("Chat Controls")
 
-    if st.button("🗑️ Clear Chat"):
+    if st.button("Clear Chat"):
 
         st.session_state.messages = []
 
