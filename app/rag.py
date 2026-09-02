@@ -1007,9 +1007,22 @@ class RAGPipeline:
                     "all employees",
                     "all people",
                     "complete details",
+<<<<<<< HEAD
                     "all details"
                 ]
             )
+=======
+                    "all details",
+                    "every",
+                    "each ",
+                    "how many",
+                    "count",
+                    "total number",
+                    "entire",
+                    "full list",
+                ]
+            ) or q.startswith("list")
+>>>>>>> dc02b3a (updated gui)
 
             if broad_question:
 
@@ -1247,9 +1260,34 @@ Provide a clear and complete answer.
             "\nRetrieving relevant information..."
         )
 
+<<<<<<< HEAD
         retrieved_chunks = (
             self.retriever.retrieve(
                 query
+=======
+        # Broad / "tell me everything" style questions need more
+        # context than a narrow factual lookup. Widen top_k when
+        # the query signals it wants comprehensive coverage.
+        q_normalized = self.normalize_text(query)
+
+        broad_signal_words = [
+            "all", "every", "each", "entire", "complete",
+            "full", "list", "summary", "summarize", "how many",
+            "count", "total"
+        ]
+
+        is_broad = any(
+            word in q_normalized
+            for word in broad_signal_words
+        )
+
+        top_k = 15 if is_broad else 8
+
+        retrieved_chunks = (
+            self.retriever.retrieve(
+                query,
+                top_k=top_k
+>>>>>>> dc02b3a (updated gui)
             )
         )
 

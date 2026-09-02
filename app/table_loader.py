@@ -6,9 +6,127 @@ from pathlib import Path
 class TableLoader:
 
     def __init__(self, data_dir="data"):
+<<<<<<< HEAD
+=======
 
         self.data_dir = Path(data_dir)
 
+        self.tables = {}
+
+        print("=" * 60)
+        print("LOADING TABLE DATA")
+        print("=" * 60)
+
+        self.load_tables()
+
+        print(
+            f"Tables Loaded : {len(self.tables)}"
+        )
+
+
+    # =========================================================
+    # LOAD CSV + XLSX
+    # =========================================================
+
+    def load_tables(self):
+
+        if not self.data_dir.exists():
+
+            print(
+                f"Data directory not found: "
+                f"{self.data_dir}"
+            )
+
+            return
+
+
+        for file in self.data_dir.rglob("*"):
+
+            if not file.is_file():
+                continue
+
+
+            suffix = file.suffix.lower()
+
+
+            try:
+
+                # ------------------------------------------------
+                # CSV
+                # ------------------------------------------------
+
+                if suffix == ".csv":
+
+                    df = pd.read_csv(file)
+
+                    self.tables[file.name] = df
+
+                    print(
+                        f"Loaded CSV : "
+                        f"{file.name} "
+                        f"({len(df)} rows)"
+                    )
+
+
+                # ------------------------------------------------
+                # Excel
+                # ------------------------------------------------
+
+                elif suffix in [".xlsx", ".xls"]:
+
+                    excel = pd.ExcelFile(file)
+
+                    for sheet in excel.sheet_names:
+
+                        df = pd.read_excel(
+                            file,
+                            sheet_name=sheet
+                        )
+
+                        key = (
+                            f"{file.name}"
+                            f"::{sheet}"
+                        )
+
+                        self.tables[key] = df
+
+                        print(
+                            f"Loaded Excel : "
+                            f"{key} "
+                            f"({len(df)} rows)"
+                        )
+
+
+            except Exception as e:
+
+                print(
+                    f"ERROR loading "
+                    f"{file}: {e}"
+                )
+
+
+    # =========================================================
+    # GET ALL TABLES
+    # =========================================================
+
+    def get_tables(self):
+
+        return self.tables
+
+
+    # =========================================================
+    # LOAD A SINGLE FILE (used by RAGPipeline.load_all_documents
+    # to turn one CSV/XLSX file into row-level text chunks that
+    # get embedded into the FAISS index as a semantic fallback,
+    # in addition to the exact-match table path in rag.py)
+    # =========================================================
+
+    def load(self, file_path):
+>>>>>>> dc02b3a (updated gui)
+
+        self.data_dir = Path(data_dir)
+
+<<<<<<< HEAD
         self.tables = {}
 
         print("=" * 60)
@@ -174,6 +292,124 @@ class TableLoader:
         return " | ".join(values)
 
 
+=======
+        suffix = file_path.suffix.lower()
+
+        rows = []
+
+        if suffix == ".csv":
+
+            df = pd.read_csv(file_path)
+
+            rows.extend(
+                self._dataframe_to_rows(df, file_path.name)
+            )
+
+        elif suffix in [".xlsx", ".xls"]:
+
+            excel = pd.ExcelFile(file_path)
+
+            for sheet in excel.sheet_names:
+
+                df = pd.read_excel(file_path, sheet_name=sheet)
+
+                source_label = f"{file_path.name}::{sheet}"
+
+                rows.extend(
+                    self._dataframe_to_rows(df, source_label)
+                )
+
+        else:
+
+            raise ValueError(
+                f"Unsupported table file type: {suffix}"
+            )
+
+        return rows
+
+
+    def _dataframe_to_rows(self, df, source_label):
+
+        df = df.dropna(how="all")
+
+        df.columns = [str(col).strip() for col in df.columns]
+
+        rows = []
+
+        for _, row in df.iterrows():
+
+            row_text = self.row_to_text(row)
+
+            if row_text:
+
+                rows.append(f"Source: {source_label} | {row_text}")
+
+        return rows
+
+
+    # =========================================================
+    # SEARCH TABLE
+    # =========================================================
+
+    def search(self, query):
+
+        query_lower = query.lower()
+
+        results = []
+
+
+        for table_name, df in self.tables.items():
+
+            for index, row in df.iterrows():
+
+                row_text = self.row_to_text(
+                    row
+                )
+
+                if self.row_matches_text(
+                    row_text,
+                    query_lower
+                ):
+
+                    results.append(
+                        {
+                            "table": table_name,
+                            "row": index,
+                            "text": row_text
+                        }
+                    )
+
+
+        return results
+
+
+    # =========================================================
+    # ROW → TEXT
+    # =========================================================
+
+    def row_to_text(
+        self,
+        row
+    ):
+
+        values = []
+
+        for column in row.index:
+
+            value = row[column]
+
+            if pd.isna(value):
+
+                continue
+
+            values.append(
+                f"{column}: {value}"
+            )
+
+        return " | ".join(values)
+
+
+>>>>>>> dc02b3a (updated gui)
     # =========================================================
     # TEXT MATCH
     # =========================================================

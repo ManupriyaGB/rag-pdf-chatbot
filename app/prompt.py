@@ -44,6 +44,9 @@ IMPORTANT RULES:
 2. Give a clear and complete answer.
 3. Do not simply repeat the user's question.
 4. Combine information from multiple retrieved chunks when useful.
+4b. If the question asks for a list, count, or "all" of something,
+    check EVERY piece of provided context and include every
+    matching item you find. Do not stop after the first one or two.
 5. If the answer is not available in the documents, say:
    "I could not find the answer in the provided documents."
 6. For follow-up questions, use the previous conversation

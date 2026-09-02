@@ -32,7 +32,7 @@ class Retriever:
     # Retrieve Similar Chunks
     # --------------------------------------------------------
 
-    def retrieve(self, query, top_k=3):
+    def retrieve(self, query, top_k=8):
 
         print("\n" + "=" * 70)
         print("RETRIEVAL STARTED")
@@ -59,6 +59,9 @@ class Retriever:
         # ---------------------------------------------
         # Similarity Search
         # ---------------------------------------------
+
+        # Never ask FAISS for more results than chunks that exist
+        top_k = min(top_k, len(self.chunks))
 
         print("\nSearching FAISS...")
 
@@ -88,6 +91,9 @@ class Retriever:
         print("=" * 70)
 
         for rank, idx in enumerate(indices[0]):
+
+            if idx == -1:
+                continue
 
             chunk = self.chunks[idx]
 
