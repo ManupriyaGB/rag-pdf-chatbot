@@ -536,43 +536,83 @@ class RAGPipeline:
                         file_path
                     )
 
-                else:
+                    df = df.dropna(how="all")
 
-                    df = pd.read_excel(
-                        file_path
+                    df.columns = [
+                        str(col).strip()
+                        for col in df.columns
+                    ]
+
+                    tables.append(
+                        {
+                            "file": file_path,
+                            "data": df
+                        }
                     )
 
-                # Remove completely empty rows
-                df = df.dropna(
-                    how="all"
-                )
+                    print(
+                        f"Table loaded directly: "
+                        f"{file_path}"
+                    )
 
-                # Normalize column names
-                df.columns = [
-                    str(col).strip()
-                    for col in df.columns
-                ]
+                    print(
+                        f"Rows    : {len(df)}"
+                    )
 
-                tables.append(
-                    {
-                        "file": file_path,
-                        "data": df
-                    }
-                )
+                    print(
+                        f"Columns : "
+                        f"{list(df.columns)}"
+                    )
 
-                print(
-                    f"Table loaded directly: "
-                    f"{file_path}"
-                )
+                else:
 
-                print(
-                    f"Rows    : {len(df)}"
-                )
+                    # IMPORTANT: pd.read_excel(file_path) with no
+                    # sheet_name only loads the FIRST sheet. Loop
+                    # over every sheet so multi-sheet workbooks are
+                    # fully searchable, not just their first tab.
+                    excel = pd.ExcelFile(file_path)
 
-                print(
-                    f"Columns : "
-                    f"{list(df.columns)}"
-                )
+                    for sheet_name in excel.sheet_names:
+
+                        df = pd.read_excel(
+                            file_path,
+                            sheet_name=sheet_name
+                        )
+
+                        df = df.dropna(how="all")
+
+                        df.columns = [
+                            str(col).strip()
+                            for col in df.columns
+                        ]
+
+                        if df.empty:
+                            continue
+
+                        source_label = (
+                            f"{file_path}::{sheet_name}"
+                        )
+
+                        tables.append(
+                            {
+                                "file": source_label,
+                                "data": df
+                            }
+                        )
+
+                        print(
+                            f"Table loaded directly: "
+                            f"{source_label}"
+                        )
+
+                        print(
+                            f"Rows    : {len(df)}"
+                        )
+
+                        print(
+                            f"Columns : "
+                            f"{list(df.columns)}"
+                        )
 
             except Exception as e:
 
@@ -1062,11 +1102,6 @@ class RAGPipeline:
                     "all employees",
                     "all people",
                     "complete details",
-<<<<<<< HEAD
-                    "all details"
-                ]
-            )
-=======
                     "all details",
                     "every",
                     "each ",
@@ -1077,7 +1112,6 @@ class RAGPipeline:
                     "full list",
                 ]
             ) or q.startswith("list")
->>>>>>> dc02b3a (updated gui)
 
             if broad_question:
 
@@ -1322,11 +1356,6 @@ Provide a clear and complete answer.
             "\nRetrieving relevant information..."
         )
 
-<<<<<<< HEAD
-        retrieved_chunks = (
-            self.retriever.retrieve(
-                query
-=======
         # Broad / "tell me everything" style questions need more
         # context than a narrow factual lookup. Widen top_k when
         # the query signals it wants comprehensive coverage.
@@ -1349,7 +1378,6 @@ Provide a clear and complete answer.
             self.retriever.retrieve(
                 query,
                 top_k=top_k
->>>>>>> dc02b3a (updated gui)
             )
         )
 
