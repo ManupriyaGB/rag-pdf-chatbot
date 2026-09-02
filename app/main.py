@@ -62,30 +62,51 @@ def render_copy_button(text, key):
     Streamlit has no native copy button for markdown text, so
     this injects a tiny HTML/JS snippet that uses the browser's
     clipboard API.
+
+    IMPORTANT: the click handler is attached via addEventListener
+    in a <script> block rather than an inline onclick="..."
+    attribute. Answer text can contain double quotes, and an
+    inline onclick attribute is itself delimited by double
+    quotes -- json.dumps(text) would then prematurely close the
+    attribute and corrupt the HTML, which is why the button
+    previously failed to render (it showed up as raw leftover
+    text instead of a button).
     """
+
+    safe_key = "".join(
+        ch if ch.isalnum() else "_"
+        for ch in str(key)
+    )
 
     safe_text = json.dumps(text)
 
     html = f"""
     <div style="margin-top: -8px;">
-        <button id="copy-btn-{key}" onclick="
-            navigator.clipboard.writeText({safe_text});
-            const btn = document.getElementById('copy-btn-{key}');
-            const original = btn.innerText;
-            btn.innerText = 'Copied!';
-            setTimeout(() => {{ btn.innerText = original; }}, 1500);
-        "
-        style="
+        <button id="copy-btn-{safe_key}" style="
             font-size: 12px;
             padding: 2px 10px;
             border-radius: 6px;
             border: 1px solid #ccc;
             background-color: #f6f6f6;
             cursor: pointer;
-        ">
-            📋 Copy
-        </button>
+        ">📋 Copy</button>
     </div>
+    <script>
+        (function () {{
+            var text = {safe_text};
+            var btn = document.getElementById("copy-btn-{safe_key}");
+            if (btn) {{
+                btn.addEventListener("click", function () {{
+                    navigator.clipboard.writeText(text);
+                    var original = btn.innerText;
+                    btn.innerText = "Copied!";
+                    setTimeout(function () {{
+                        btn.innerText = original;
+                    }}, 1500);
+                }});
+            }}
+        }})();
+    </script>
     """
 
     components.html(html, height=40)
@@ -259,3 +280,27 @@ with st.sidebar:
     )
 
     st.code("data/")
+
+    # ------------------------------------------------------
+    # SHOW CURRENTLY LOADED FILES (debug/confidence check)
+    # ------------------------------------------------------
+
+    loaded_files = (
+        st.session_state
+        .rag_pipeline
+        .find_source_files()
+    )
+
+    with st.expander(
+        f"Currently loaded files ({len(loaded_files)})"
+    ):
+
+        if loaded_files:
+
+            for f in loaded_files:
+
+                st.text(os.path.basename(f))
+
+        else:
+
+            st.caption("No files found in data/ yet.")

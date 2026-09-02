@@ -661,11 +661,26 @@ class RAGPipeline:
 
     # =========================================================
     # CHECK WHETHER QUESTION IS TABLE RELATED
+    #
+    # This used to rely ONLY on a fixed list of English words
+    # ("employee", "salary", "department", ...). That silently
+    # broke for any uploaded table outside that one domain --
+    # e.g. a question like "Lakimsetti Mohan project name" or
+    # "Total vs Billable hours for May-Jul" matched none of
+    # those words, so it never even tried the table search path.
+    #
+    # Now, in ADDITION to the static hint words (which still
+    # catch generic phrasing like "who" / "list"), we check
+    # whether the question mentions any actual COLUMN NAME from
+    # whatever tables are currently loaded. That makes table
+    # detection work automatically for any uploaded CSV/Excel,
+    # regardless of its subject matter.
     # =========================================================
 
     def is_table_question(
         self,
-        query
+        query,
+        tables=None
     ):
 
         q = self.normalize_text(
@@ -725,10 +740,48 @@ class RAGPipeline:
             "table"
         ]
 
-        return any(
+        if any(
             keyword in q
             for keyword in table_keywords
+        ):
+            return True
+
+        # ---------------------------------------------------
+        # DYNAMIC CHECK: does the question mention a column
+        # name from any currently loaded table?
+        # ---------------------------------------------------
+
+        if tables is None:
+            tables = self.load_tables()
+
+        if not tables:
+            return False
+
+        query_words = set(
+            word
+            for word in q.split()
+            if len(word) >= 3
         )
+
+        if not query_words:
+            return False
+
+        for table in tables:
+
+            for column in table["data"].columns:
+
+                column_words = set(
+                    word
+                    for word in self.normalize_text(
+                        column
+                    ).split()
+                    if len(word) >= 3
+                )
+
+                if query_words & column_words:
+                    return True
+
+        return False
 
     # =========================================================
     # FIND NUMERIC CONDITION
@@ -796,10 +849,12 @@ class RAGPipeline:
 
     def retrieve_from_tables(
         self,
-        query
+        query,
+        tables=None
     ):
 
-        tables = self.load_tables()
+        if tables is None:
+            tables = self.load_tables()
 
         if not tables:
 
@@ -1165,8 +1220,14 @@ Provide a clear and complete answer.
         # TABLE QUESTION
         # =====================================================
 
+        # Load tables once and reuse for both the detection
+        # check and the actual retrieval, instead of reading
+        # every CSV/Excel file from disk twice per question.
+        tables = self.load_tables()
+
         if self.is_table_question(
-            query
+            query,
+            tables=tables
         ):
 
             print("\n")
@@ -1180,7 +1241,8 @@ Provide a clear and complete answer.
 
             table_context = (
                 self.retrieve_from_tables(
-                    query
+                    query,
+                    tables=tables
                 )
             )
 
